@@ -1,0 +1,40 @@
+import pandas as pd
+import os
+
+# Example DataFrame
+# df = pd.read_csv("your_file.csv")
+
+# Function to split DataFrame into ~equal-sized parts by file size
+def split_df_by_csv_size(df, parts=4, base_filename='df_part'):
+    # Convert full DataFrame to CSV string once
+    full_csv = df.to_csv(index=False)
+    total_size = len(full_csv.encode('utf-8'))
+    target_size = total_size / parts
+
+    # Trackers
+    current_chunk = []
+    chunk_size = 0
+    chunk_index = 1
+    header = ','.join(df.columns) + '\n'
+
+    for i, row in df.iterrows():
+        row_str = ','.join(map(str, row)) + '\n'
+        row_bytes = len(row_str.encode('utf-8'))
+
+        if chunk_size + row_bytes > target_size and chunk_index < parts:
+            # Save current chunk
+            with open(f'{base_filename}_{chunk_index}.csv', 'w', encoding='utf-8') as f:
+                f.write(header + ''.join(current_chunk))
+            chunk_index += 1
+            current_chunk = []
+            chunk_size = 0
+
+        current_chunk.append(row_str)
+        chunk_size += row_bytes
+
+    # Save the final chunk
+    with open(f'{base_filename}_{chunk_index}.csv', 'w', encoding='utf-8') as f:
+        f.write(header + ''.join(current_chunk))
+
+# Call the function
+split_df_by_csv_size(df)
